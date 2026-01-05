@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激光安全互动课堂 | Laser Safety Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Chosen Palette: Lab Clean */
+        /* Primary: Slate-900 (Text), White (Bg) */
+        /* Accents: Red-600 (Laser/Danger), Amber-500 (Warning), Emerald-500 (Safe/Go), Blue-600 (Info/LSO) */
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 300px;
+        }
+
+        .laser-glow {
+            box-shadow: 0 0 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .step-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .step-card.active {
+            border-left-color: #2563eb;
+            background-color: #eff6ff;
+            transform: translateX(10px);
+        }
+
+        .sop-btn {
+            transition: all 0.2s;
+        }
+        .sop-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Hide scrollbar for clean UI */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <!-- Application Structure Plan: 
+         The app uses a Tab-based navigation system to switch between Module 1 (Industry Context) and Module 8 (LSO & Safety).
+         
+         Module 1 Focus:
+         - "Why Safety?": Accident stats visualization to create urgency.
+         - "Industry Map": Interactive cards representing Upstream/Midstream/Downstream.
+         
+         Module 8 Focus:
+         - "Defense System": 3 Columns for Engineering, Admin, PPE.
+         - "LSO Command": Interactive role definition and Risk Matrix.
+         - "SOP Sim": A clickable checklist to simulate safe startup procedures.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used (using FontAwesome). NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-radiation text-red-500 text-2xl laser-glow"></i>
+                    <span class="font-bold text-xl tracking-wider">激光安全课堂 <span class="text-xs font-normal text-slate-400">| Laser Safety Hub</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <button onclick="switchTab('home')" class="nav-btn text-white hover:text-red-400 px-3 py-2 rounded-md text-sm font-medium transition" data-target="home">首页</button>
+                    <button onclick="switchTab('module1')" class="nav-btn text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition" data-target="module1">模块一：行业与认知</button>
+                    <button onclick="switchTab('module8')" class="nav-btn text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition" data-target="module8">模块八：LSO与准则</button>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="toggleMobileMenu()" class="text-gray-300 hover:text-white focus:outline-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-800 px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <button onclick="switchTab('home')" class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium w-full text-left">首页</button>
+            <button onclick="switchTab('module1')" class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium w-full text-left">模块一：行业与认知</button>
+            <button onclick="switchTab('module8')" class="block text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium w-full text-left">模块八：LSO与准则</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow bg-gray-50">
+        
+        <!-- HOME / HERO SECTION -->
+        <section id="home" class="view-section animate-fade-in">
+            <div class="relative bg-white overflow-hidden">
+                <div class="max-w-7xl mx-auto">
+                    <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+                        <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+                            <div class="sm:text-center lg:text-left">
+                                <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                                    <span class="block xl:inline">掌握最亮的光</span>
+                                    <span class="block text-red-600 xl:inline">守住安全的底线</span>
+                                </h1>
+                                <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                                    欢迎来到激光安全交互式学习平台。在这里，我们将从行业宏观视角出发，深入探讨激光安全准则，并掌握激光安全员（LSO）的核心技能。
+                                </p>
+                                <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                                    <div class="rounded-md shadow">
+                                        <button onclick="switchTab('module1')" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-red-600 hover:bg-red-700 md:py-4 md:text-lg transition">
+                                            开始学习：行业认知 <i class="fas fa-arrow-right ml-2"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-3 sm:mt-0 sm:ml-3">
+                                        <button onclick="switchTab('module8')" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 md:py-4 md:text-lg transition">
+                                            直达核心：LSO实战
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+                <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-slate-100 flex items-center justify-center border-l border-gray-200">
+                    <div class="text-center p-8">
+                        <i class="fas fa-shield-alt text-9xl text-slate-300"></i>
+                        <p class="mt-4 text-slate-500 font-mono">Safety First, Innovation Second.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 1: INDUSTRY & AWARENESS -->
+        <section id="module1" class="view-section hidden p-6 max-w-7xl mx-auto">
+            <!-- Intro Block -->
+            <div class="mb-10 text-center">
+                <h2 class="text-3xl font-bold text-gray-900">模块一：认识激光行业与安全概论</h2>
+                <p class="mt-2 text-gray-600 max-w-3xl mx-auto">
+                    本模块基于《工业激光安全指南》与LIA数据，旨在建立宏观认知。我们将剖析为什么“懂技术的人更容易受伤”，并全景展示激光产业链的三个环节及各自的安全痛点。
+                </p>
+            </div>
+
+            <!-- Accident Stats Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-500">
+                    <h3 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> 谁最容易受伤？
+                    </h3>
+                    <p class="text-gray-600 mb-4 text-sm">
+                        根据美国激光学会（LIA）的统计，激光事故受害者并非全是新手。相反，<b>技术人员和科研人员</b>占据了绝大多数。这往往源于“虚假的掌控感”和非正常操作（如调试、维修）。
+                    </p>
+                    <!-- Visualization & Content Choices: Pie chart to show victim demographics. Goal: Inform/Shock. -->
+                    <div class="chart-container">
+                        <canvas id="victimChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-xs text-gray-400 text-center">数据来源：LIA激光事故统计数据库</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
+                    <h3 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fas fa-industry text-blue-500 mr-2"></i> 激光产业链全景图
+                    </h3>
+                    <p class="text-gray-600 mb-6 text-sm">
+                        点击下方层级，查看不同产业链环节的安全侧重点。你的职业定位在哪里？
+                    </p>
+                    
+                    <!-- Visualization & Content Choices: Interactive Accordion/List for Upstream/Midstream/Downstream. Goal: Organize info clearly. -->
+                    <div class="space-y-3">
+                        <!-- Upstream -->
+                        <div class="border rounded-md overflow-hidden">
+                            <button class="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 flex justify-between items-center transition" onclick="toggleAccordion('upstream')">
+                                <span class="font-bold text-slate-700">上游：元器件与材料 (基石)</span>
+                                <i class="fas fa-chevron-down text-slate-400 transform transition-transform" id="icon-upstream"></i>
+                            </button>
+                            <div id="content-upstream" class="hidden px-4 py-4 bg-white">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-blue-100 p-2 rounded">
+                                        <i class="fas fa-microchip text-blue-600"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="text-sm font-bold text-gray-900">典型企业</h4>
+                                        <p class="text-sm text-gray-600">福晶科技（晶体）、锐芯/长飞（特种光纤）、长光华芯（芯片）。</p>
+                                        <h4 class="text-sm font-bold text-gray-900 mt-2 text-red-600">安全侧重</h4>
+                                        <p class="text-sm text-gray-600">化学危害（处理晶体试剂）、粉尘危害、显微镜下的辐射防护。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Midstream -->
+                        <div class="border rounded-md overflow-hidden">
+                            <button class="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 flex justify-between items-center transition" onclick="toggleAccordion('midstream')">
+                                <span class="font-bold text-slate-700">中游：激光器制造 (心脏)</span>
+                                <i class="fas fa-chevron-down text-slate-400 transform transition-transform" id="icon-midstream"></i>
+                            </button>
+                            <div id="content-midstream" class="hidden px-4 py-4 bg-white">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-purple-100 p-2 rounded">
+                                        <i class="fas fa-bolt text-purple-600"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="text-sm font-bold text-gray-900">典型企业</h4>
+                                        <p class="text-sm text-gray-600">锐科激光、创鑫激光、华日激光（光纤/固体/超快）。</p>
+                                        <h4 class="text-sm font-bold text-gray-900 mt-2 text-red-600">安全侧重</h4>
+                                        <p class="text-sm text-gray-600">光辐射密度最高区域。重点是<b>光路调试安全</b>（盲调技术），防止千分之一漏光致盲。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Downstream -->
+                        <div class="border rounded-md overflow-hidden">
+                            <button class="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 flex justify-between items-center transition" onclick="toggleAccordion('downstream')">
+                                <span class="font-bold text-slate-700">下游：激光装备与应用 (广阔天地)</span>
+                                <i class="fas fa-chevron-down text-slate-400 transform transition-transform" id="icon-downstream"></i>
+                            </button>
+                            <div id="content-downstream" class="hidden px-4 py-4 bg-white">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 bg-green-100 p-2 rounded">
+                                        <i class="fas fa-cogs text-green-600"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="text-sm font-bold text-gray-900">典型企业</h4>
+                                        <p class="text-sm text-gray-600">大族激光、华工激光、海目星、禾赛科技（LiDAR）。</p>
+                                        <h4 class="text-sm font-bold text-gray-900 mt-2 text-red-600">安全侧重</h4>
+                                        <p class="text-sm text-gray-600">环境最复杂。高压电、机械伤害（机械臂）、加工烟尘毒气、火灾隐患。需保护操作员及客户。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Standard & Careers Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Standards -->
+                <div class="bg-slate-800 text-white rounded-lg p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-red-600 rounded-full opacity-20"></div>
+                    <h3 class="text-xl font-bold mb-4">行业“天条”：标准体系</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-center">
+                            <span class="bg-red-600 text-xs px-2 py-1 rounded mr-3">强标</span>
+                            <div>
+                                <strong class="block">GB 44703-2024</strong>
+                                <span class="text-slate-400 text-sm">光辐射安全通用要求（法律强制力）</span>
+                            </div>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="bg-blue-600 text-xs px-2 py-1 rounded mr-3">基石</span>
+                            <div>
+                                <strong class="block">GB 7247.1 / IEC 60825-1</strong>
+                                <span class="text-slate-400 text-sm">激光产品分类与要求（判别依据）</span>
+                            </div>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="bg-gray-600 text-xs px-2 py-1 rounded mr-3">机构</span>
+                            <div>
+                                <strong class="block">SAC/TC284</strong>
+                                <span class="text-slate-400 text-sm">全国光辐射安全标准化技术委员会</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- New Careers -->
+                <div class="bg-white border border-gray-200 rounded-lg p-6 relative">
+                    <h3 class="text-xl font-bold mb-4 text-gray-900">新职业风向标</h3>
+                    <div class="flex space-x-4">
+                        <div class="flex-1 bg-amber-50 p-4 rounded border border-amber-200">
+                            <div class="text-amber-600 text-2xl mb-2"><i class="fas fa-tools"></i></div>
+                            <h4 class="font-bold text-gray-800 text-sm">激光设备安装调试员</h4>
+                            <p class="text-xs text-gray-600 mt-1">职业编码 6-23-04-04。负责精密设备装调，"安全操作"是硬门槛。</p>
+                        </div>
+                        <div class="flex-1 bg-indigo-50 p-4 rounded border border-indigo-200 cursor-pointer hover:shadow-md transition" onclick="switchTab('module8')">
+                            <div class="text-indigo-600 text-2xl mb-2"><i class="fas fa-user-shield"></i></div>
+                            <h4 class="font-bold text-gray-800 text-sm">激光安全员 (LSO)</h4>
+                            <p class="text-xs text-gray-600 mt-1">企业的安全“守门人”。负责危害识别、培训与授权。点击查看详情 -> </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 8: SAFETY GUIDELINES & LSO -->
+        <section id="module8" class="view-section hidden p-6 max-w-7xl mx-auto">
+            <!-- Intro Block -->
+            <div class="mb-10 text-center">
+                <h2 class="text-3xl font-bold text-gray-900">模块八：安全准则与LSO深度培训</h2>
+                <p class="mt-2 text-gray-600 max-w-3xl mx-auto">
+                    这是课程的“压舱石”。我们将构建由工程、管理、个人防护组成的防御体系，并依据最新团标，解析激光安全员（LSO）的五大核心职责。
+                </p>
+            </div>
+
+            <!-- Tab Navigation for Module 8 Sub-sections -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button onclick="switchSubTab('defense')" class="sub-tab-btn border-b-2 border-red-500 text-red-600 whitespace-nowrap py-4 px-1 font-medium text-sm transition" data-target="defense">
+                        <i class="fas fa-shield-virus mr-2"></i>三道防线
+                    </button>
+                    <button onclick="switchSubTab('lso')" class="sub-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 font-medium text-sm transition" data-target="lso">
+                        <i class="fas fa-user-tie mr-2"></i>LSO岗位规范
+                    </button>
+                    <button onclick="switchSubTab('sop')" class="sub-tab-btn border-b-2 border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 font-medium text-sm transition" data-target="sop">
+                        <i class="fas fa-tasks mr-2"></i>实操SOP演练
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sub-section: 3 Defense Lines -->
+            <div id="defense" class="sub-section animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Engineering -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-xl mb-4">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">1. 工程控制 (首选)</h3>
+                        <p class="text-xs text-gray-500 mb-4">把老虎关进笼子。不依赖人的自觉性。</p>
+                        <ul class="text-sm space-y-2 text-gray-700">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>安全联锁：</b>门开光断，严禁屏蔽。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>防护房：</b>耐火、密闭、无漏光。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>光束终止器：</b>光路尽头必须有挡板。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>受控区 (LCA)：</b>划定NHZ，安装警示灯。</li>
+                        </ul>
+                    </div>
+                    <!-- Admin -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 text-xl mb-4">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">2. 管理控制 (软约束)</h3>
+                        <p class="text-xs text-gray-500 mb-4">制度、流程与培训。</p>
+                        <ul class="text-sm space-y-2 text-gray-700">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>SOP：</b>标准操作规程上墙。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>贴标：</b>警告标签+参数说明标签。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>准入制度：</b>未经培训授权，不得入内。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>钥匙管控：</b>专人保管启动钥匙/密码。</li>
+                        </ul>
+                    </div>
+                    <!-- PPE -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xl mb-4">
+                            <i class="fas fa-glasses"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2">3. 个人防护 (最后防线)</h3>
+                        <p class="text-xs text-gray-500 mb-4">当工程失效时的肉身保护。</p>
+                        <ul class="text-sm space-y-2 text-gray-700">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>波长匹配：</b>防1064nm的不一定防532nm。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>OD值：</b>光密度。OD7衰减千万倍。</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><b>完好性：</b>定期检查镜片划痕和老化。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-section: LSO Role -->
+            <div id="lso" class="sub-section hidden animate-fade-in">
+                <div class="bg-slate-900 text-white rounded-lg p-8 mb-8">
+                    <div class="flex flex-col md:flex-row items-center justify-between">
+                        <div>
+                            <h3 class="text-2xl font-bold mb-2">激光安全员 (LSO)</h3>
+                            <p class="text-slate-400">不仅仅是技术员，更是获得书面任命的“安全执法者”。拥有“一票否决权”。</p>
+                        </div>
+                        <div class="mt-4 md:mt-0">
+                            <div class="bg-slate-700 px-4 py-2 rounded text-center">
+                                <span class="block text-xs text-slate-400 uppercase">核心依据</span>
+                                <span class="font-mono font-bold">团体标准《激光安全员岗位规范》</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Responsibilities -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-gray-900 mb-4 border-b pb-2">LSO 五大核心职责 (点击查看详情)</h4>
+                        <div class="space-y-2">
+                            <details class="group">
+                                <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                    <span>1. 危害识别 (Identify)</span>
+                                    <span class="transition group-open:rotate-180"><i class="fas fa-chevron-down"></i></span>
+                                </summary>
+                                <div class="text-gray-600 mt-3 group-open:animate-fadeIn px-3 text-sm">
+                                    具备“鹰眼”，识别光纤折弯、支架松动、高压接地、烟尘排放等隐患。
+                                </div>
+                            </details>
+                            <details class="group">
+                                <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                    <span>2. 风险评估 (Risk Assessment)</span>
+                                    <span class="transition group-open:rotate-180"><i class="fas fa-chevron-down"></i></span>
+                                </summary>
+                                <div class="text-gray-600 mt-3 group-open:animate-fadeIn px-3 text-sm">
+                                    使用风险矩阵。评估严重程度（致盲vs烫伤）和可能性。4类激光器无联锁属于极高风险。
+                                </div>
+                            </details>
+                            <details class="group">
+                                <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                    <span>3. 检查与监督 (Audit)</span>
+                                    <span class="transition group-open:rotate-180"><i class="fas fa-chevron-down"></i></span>
+                                </summary>
+                                <div class="text-gray-600 mt-3 group-open:animate-fadeIn px-3 text-sm">
+                                    定期巡检 PPE、警示灯、挡板。<b>必须记录备案</b>，作为法律免责证据。
+                                </div>
+                            </details>
+                            <details class="group">
+                                <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                    <span>4. 培训与授权 (Training)</span>
+                                    <span class="transition group-open:rotate-180"><i class="fas fa-chevron-down"></i></span>
+                                </summary>
+                                <div class="text-gray-600 mt-3 group-open:animate-fadeIn px-3 text-sm">
+                                    分层培训。操作人员必须考核合格后，由LSO签字授权方可上岗。
+                                </div>
+                            </details>
+                            <details class="group">
+                                <summary class="flex justify-between items-center font-medium cursor-pointer list-none bg-gray-50 p-3 rounded hover:bg-gray-100 transition">
+                                    <span>5. 应急处置 (Response)</span>
+                                    <span class="transition group-open:rotate-180"><i class="fas fa-chevron-down"></i></span>
+                                </summary>
+                                <div class="text-gray-600 mt-3 group-open:animate-fadeIn px-3 text-sm">
+                                    事故发生时：切断电源 -> 安抚伤员闭眼 -> 送医带上激光参数 -> 保护现场。
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <!-- Risk Matrix Interactive -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <h4 class="font-bold text-gray-900 mb-4 border-b pb-2">风险评估矩阵模拟</h4>
+                        <p class="text-xs text-gray-500 mb-4">拖动滑块评估当前场景风险等级。</p>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">严重程度 (Severity)</label>
+                            <input type="range" id="severity" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>微伤</span>
+                                <span>致盲/死亡</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">发生可能性 (Probability)</label>
+                            <input type="range" id="probability" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>极低</span>
+                                <span>极高</span>
+                            </div>
+                        </div>
+
+                        <div id="risk-result" class="p-4 rounded text-center font-bold text-white bg-yellow-500 transition-colors">
+                            当前风险：中等 (需关注)
+                        </div>
+                        <p id="risk-action" class="text-xs text-center mt-2 text-gray-600">建议：定期检查，加强PPE管理。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-section: SOP Simulator -->
+            <div id="sop" class="sub-section hidden animate-fade-in">
+                <div class="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto">
+                    <h3 class="text-2xl font-bold text-center mb-2">4类激光器开机 SOP 实战演练</h3>
+                    <p class="text-center text-gray-500 mb-8">请按正确顺序点击以下步骤，完成安全开机。</p>
+
+                    <div class="space-y-4" id="sop-container">
+                        <!-- Step 1 -->
+                        <div id="step-1" class="step-card bg-gray-50 p-4 rounded border border-gray-200 opacity-100">
+                            <h4 class="font-bold text-gray-800">步骤 1: 个人防护 (PPE)</h4>
+                            <p class="text-sm text-gray-600 mb-3">进入实验室前，首先要做什么？</p>
+                            <div class="flex space-x-3">
+                                <button onclick="checkSop(1, true)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-blue-50 text-sm">佩戴匹配波长的护目镜，摘除首饰</button>
+                                <button onclick="checkSop(1, false)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-red-50 text-sm">直接进入，里面很暗</button>
+                            </div>
+                            <div id="feedback-1" class="hidden mt-2 text-sm font-bold"></div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div id="step-2" class="step-card bg-gray-50 p-4 rounded border border-gray-200 opacity-50 pointer-events-none">
+                            <h4 class="font-bold text-gray-800">步骤 2: 环境检查</h4>
+                            <p class="text-sm text-gray-600 mb-3">进入受控区后，检查什么？</p>
+                            <div class="flex space-x-3">
+                                <button onclick="checkSop(2, false)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-red-50 text-sm">打开窗帘透气</button>
+                                <button onclick="checkSop(2, true)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-blue-50 text-sm">确认无闲杂人员，门窗关闭，警示灯亮</button>
+                            </div>
+                            <div id="feedback-2" class="hidden mt-2 text-sm font-bold"></div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div id="step-3" class="step-card bg-gray-50 p-4 rounded border border-gray-200 opacity-50 pointer-events-none">
+                            <h4 class="font-bold text-gray-800">步骤 3: 启动与出光</h4>
+                            <p class="text-sm text-gray-600 mb-3">一切就绪，如何出光？</p>
+                            <div class="flex space-x-3">
+                                <button onclick="checkSop(3, true)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-blue-50 text-sm">开启水冷->电源->低功率引导光确认->高功率</button>
+                                <button onclick="checkSop(3, false)" class="sop-btn px-4 py-2 bg-white border border-gray-300 rounded hover:bg-red-50 text-sm">直接满功率出光测试</button>
+                            </div>
+                            <div id="feedback-3" class="hidden mt-2 text-sm font-bold"></div>
+                        </div>
+                    </div>
+
+                    <div id="sop-complete" class="hidden mt-8 text-center p-6 bg-green-50 border border-green-200 rounded">
+                        <i class="fas fa-check-circle text-4xl text-green-500 mb-2"></i>
+                        <h4 class="text-xl font-bold text-green-800">演练完成！</h4>
+                        <p class="text-green-700">您已掌握基本的开机安全流程。请在实际工作中严格执行。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-8 text-center">
+        <p class="mb-2">© 2024 激光安全课程组 | Powered by Source Report Data</p>
+        <p class="text-xs">
+            核心参考：GB 7247.1-2024 | GB 44703-2024 | 《激光安全员岗位规范》团标 | ANSI Z136.1
+        </p>
+    </footer>
+
+    <script>
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            // Hide all sections
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show target section
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+
+            // Trigger animations or charts if needed
+            if (tabId === 'module1') {
+                renderChart();
+            }
+        }
+
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- Module 1: Accordion Logic ---
+        function toggleAccordion(id) {
+            const content = document.getElementById(`content-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        // --- Module 1: Chart.js for Accidents ---
+        let chartInstance = null;
+        function renderChart() {
+            if (chartInstance) return; // Prevent re-rendering
+
+            const ctx = document.getElementById('victimChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['技术/科研人员', '操作工人', '其他/旁观者', '学生'],
+                    datasets: [{
+                        label: '事故受害者占比',
+                        data: [45, 25, 20, 10], // Estimation based on narrative "Technicians/Scientists are the majority"
+                        backgroundColor: [
+                            '#ef4444', // Red for Techs (Danger)
+                            '#3b82f6',
+                            '#94a3b8',
+                            '#fbbf24'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Module 8: Sub-tab Logic ---
+        function switchSubTab(subTabId) {
+            // Hide all sub-sections
+            document.querySelectorAll('#module8 .sub-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show target
+            document.getElementById(subTabId).classList.remove('hidden');
+
+            // Update button styles
+            document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+                btn.classList.remove('border-red-500', 'text-red-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+                if (btn.dataset.target === subTabId) {
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    btn.classList.add('border-red-500', 'text-red-600');
+                }
+            });
+        }
+
+        // --- Module 8: Risk Matrix Logic ---
+        const severityInput = document.getElementById('severity');
+        const probInput = document.getElementById('probability');
+        const riskResult = document.getElementById('risk-result');
+        const riskAction = document.getElementById('risk-action');
+
+        function updateRisk() {
+            const s = parseInt(severityInput.value);
+            const p = parseInt(probInput.value);
+            const score = s * p;
+
+            let text = "";
+            let colorClass = "";
+            let action = "";
+
+            if (score >= 15) {
+                text = "极高风险 (Critical)";
+                colorClass = "bg-red-600";
+                action = "立即停机整改！(LSO一票否决)";
+            } else if (score >= 8) {
+                text = "中等风险 (Medium)";
+                colorClass = "bg-yellow-500";
+                action = "需采取工程或管理措施降低风险。";
+            } else {
+                text = "低风险 (Low)";
+                colorClass = "bg-green-500";
+                action = "维持现有措施，定期检查。";
+            }
+
+            riskResult.textContent = `风险分值: ${score} - ${text}`;
+            riskResult.className = `p-4 rounded text-center font-bold text-white transition-colors ${colorClass}`;
+            riskAction.textContent = action;
+        }
+
+        severityInput.addEventListener('input', updateRisk);
+        probInput.addEventListener('input', updateRisk);
+
+        // --- Module 8: SOP Simulator Logic ---
+        function checkSop(step, isCorrect) {
+            const feedback = document.getElementById(`feedback-${step}`);
+            feedback.classList.remove('hidden');
+            
+            if (isCorrect) {
+                feedback.textContent = "正确！进入下一步...";
+                feedback.classList.add('text-green-600');
+                feedback.classList.remove('text-red-600');
+                
+                // Active next step
+                if (step < 3) {
+                    const nextStep = document.getElementById(`step-${step+1}`);
+                    nextStep.classList.remove('opacity-50', 'pointer-events-none');
+                    nextStep.classList.add('active');
+                    
+                    // Mark current as done visually
+                    document.getElementById(`step-${step}`).classList.remove('active');
+                    document.getElementById(`step-${step}`).classList.add('border-l-4', 'border-green-500');
+                } else {
+                    document.getElementById('sop-complete').classList.remove('hidden');
+                }
+            } else {
+                feedback.textContent = "错误！这是严重违规操作，可能导致伤害。";
+                feedback.classList.add('text-red-600');
+                feedback.classList.remove('text-green-600');
+            }
+        }
+    </script>
+</body>
+</html>
